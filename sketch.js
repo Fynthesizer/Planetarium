@@ -8,7 +8,7 @@ var reverb;
 var chorus;
 
 var planetLabels = false;
-var timeSlider, labelCheckbox;
+var timeSlider;
 
 function preload() {
     planetData = loadTable('planets.csv','csv','header');
@@ -22,9 +22,6 @@ function setup() {
     timeSlider = createSlider(0,5000,25);
     timeSlider.position(20,height-40);
     timeSlider.style('width', width - 40 + 'px');
-    //labelCheckbox = createCheckbox();
-    //labelCheckbox.position(135,50);
-    //labelCheckbox.changed(toggleLabels);
     
     reverb = new p5.Reverb();
     reverb.set(4,2);
@@ -34,13 +31,10 @@ function setup() {
             var diameter = planetData.getNum(r,2);
             var mass = planetData.getNum(r,1);
             var distance = planetData.getNum(r,8);
-            //var distance = r * 100;
             var rotationPeriod = planetData.getNum(r,7);
             var orbitPeriod = planetData.getNum(r,11);
             planets.push(new planet(name,diameter,mass,distance,rotationPeriod,orbitPeriod));
-        
     }
-    
 }
 
 function draw() {
@@ -61,6 +55,7 @@ function draw() {
     stroke(255);
     line(width/2,height/2+5,width/2,height/2-5);
     line(width/2+5,height/2,width/2-5,height/2);
+    
     for(let p of planets){
         p.update();
     }
@@ -75,7 +70,6 @@ class planet{
         this.distance = distance * 1000000000;
         this.rotationPeriod = rotationPeriod;
         this.orbitPeriod = orbitPeriod;
-        
         
         this.osc = new p5.Oscillator(0,'sine');
         this.osc.freq(5500000/this.diameter);
@@ -97,7 +91,6 @@ class planet{
         this.mute = false;
         this.showLabel = false;
         this.fillPhase = 0;
-        
     }
     
     update(){
@@ -107,15 +100,11 @@ class planet{
         this.x = (this.distance/zoomLevel) * cos(this.phase) + width/2;
         this.y = (this.distance/zoomLevel) * sin(this.phase) + height/2;
         this.size = ((this.diameter/zoomLevel)*5000000)+2;
-        //fill(255,map(this.fillPhase,-1,1,10,200));
         stroke(255,50);
         noFill();
         if(this.ringRadius<width) ellipse(width/2,height/2,this.ringRadius,this.ringRadius);
         
-        if(dist(mouseX,mouseY,this.x,this.y)<(this.size/2)+5) {this.showLabel = true;}
-        else {this.showLabel = false;}
         if(this.mute) {
-            //stroke(255,map(this.fillPhase,-1,1,10,200));
             stroke(255,50);
             noFill();
         }
@@ -123,19 +112,20 @@ class planet{
             fill(255,map(this.fillPhase,-1,1,10,230));
             noStroke();
         }
+        
         ellipse(this.x,this.y,this.size,this.size);
+        
+        if(dist(mouseX,mouseY,this.x,this.y)<(this.size/2)+5) this.showLabel = true;
+        else this.showLabel = false;
         
         if(this.showLabel){
             textSize(12);
             fill(255);
             noStroke();
-            textAlign(CENTER,CENTER);
-            text(this.name,this.x,this.y);
+            textAlign(LEFT,CENTER);
+            text(this.name,this.x+(this.size/2)+5,this.y);
         }
-        
-        
-        
-        
+
         var minX = (this.distance/zoomLevel) * cos(180) + width/2;
         var maxX = (this.distance/zoomLevel) * cos(0) + width/2;
         this.osc.pan(map(this.x,minX,maxX,-1,1),0.1);
@@ -156,8 +146,6 @@ class planet{
 }
 
 function mouseWheel(event){
-    //zoomLevel += event.delta/200;
-    //zoomLevel = constrain(zoomLevel+event.delta*10000000,0,100000000000);
     zoomLevel = constrain(zoomLevel/(1-(Math.sign(event.delta)*0.1)),300000000,30000000000);
     print(zoomLevel);
 }
@@ -173,14 +161,13 @@ function solo(planet){
 function mousePressed(){
     if(mouseY < height - 50){
         for(let p of planets){
-            if(dist(mouseX,mouseY,p.x,p.y)<(p.size/2)+5) {solo(p); return;}
+            if(dist(mouseX,mouseY,p.x,p.y)<(p.size/2)+5) {
+                solo(p); 
+                return;
+            }
         }
         for(let p of planets){
             p.setMute(false);
         }
     }
-}
-
-function toggleLabels(){
-    planetLabels = labelCheckbox.checked();
 }
